@@ -1,25 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
-function TheatersPage({ location }) {
-  const selectedMovie = location.state.movie;
+function TheatersPage() {
+  const { city, movieId } = useParams(); // Get the city and movieId from URL parameters
+  const [theaters, setTheaters] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTheaters(city, movieId);
+  }, [city, movieId]);
+
+  const fetchTheaters = async (city, movieId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/theaters/${movieId}?city=${city}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch theaters');
+      }
+      const data = await response.json();
+      setTheaters(data);
+      setError(null); // Reset error state
+    } catch (error) {
+      console.error('Error fetching theaters:', error);
+      setError('Error fetching theaters. Please try again later.');
+    }
+  };
 
   return (
-    <div>
-      <h1>Theaters for {selectedMovie.title}</h1>
-      <div className="container">
-        <div className="row">
-          {selectedMovie.theaters.map(theater => (
-            <div key={theater.id} className="col-md-4">
-              <div className="card mb-4 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title">{theater.name}</h5>
-                  <p className="card-text">Seating Arrangement: {theater.seating_arrangement.join(', ')}</p>
-                  <button className="btn btn-primary">Select</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="container">
+      <h2>Theaters showing the movie in {city}</h2>
+      {error && <p className="error">{error}</p>}
+      <div className="theaters-container">
+        {theaters.map(theater => (
+          <div key={theater.id} className="card">
+            <h3 className="theater-name">{theater.name}</h3>
+            <p className="theater-location">Location: {theater.location}</p>
+            {/* Add a Link to the seat selection page */}
+            <Link to={`/seats/${city}/${movieId}/${theater.id}`} className="btn btn-primary">
+              Select Seat
+            </Link>
+          </div>
+        ))}
       </div>
     </div>
   );
